@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <style>
+		  body { margin:0; padding: 0; width:100%; height:100%;}
+		  .map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+    <script src="src/proj4-compressed.js"></script>
+    <script src="src/proj4leaflet.js"></script>
+    <title>rio-tiler CRS example</title>
+  </head>
+  <body>
+    <div id="map" class="map"></div>
+    
+	<script type="text/javascript">
+      //////////////////////////////////////////////////////////////////////////
+      // WGS84
+      //////////////////////////////////////////////////////////////////////////
+      map = new L.Map('map', {crs: L.CRS.EPSG4326});
+      L.tileLayer('https://tile.gbif.org/4326/omt/{z}/{x}/{y}@1x.png?style=gbif-classic', {
+        maxZoom: 12,
+        minZoom: 0,
+        continuousWorld: true,
+        attribution: 'rio-tiler-crs'
+      }).addTo(map)
+    
+      //india
+      L.tileLayer('http://0.0.0.0:8501/tiles/epsg4326/{z}/{x}/{y}.png?filename=india_cog', {
+        maxZoom: 12,
+        minZoom: 7,
+        continuousWorld: true,
+        attribution: 'rio-tiler-crs',
+        bounds: [[7.6179895746159865, 75.32171992018081], [11.170171692774927, 77.70927053723888]]
+      }).addTo(map)
+
+      L.polygon([
+        [7.6179895746159865, 75.32171992018081],
+        [7.6179895746159865, 77.70927053723888], 
+        [11.170171692774927, 77.70927053723888], 
+        [11.170171692774927, 75.32171992018081],
+        [7.6179895746159865, 75.32171992018081]
+      ]).addTo(map)
+
+      //north
+      L.tileLayer('http://0.0.0.0:8501/tiles/epsg4326/{z}/{x}/{y}.png?filename=north_cog', {
+        maxZoom: 12,
+        minZoom: 7,
+        continuousWorld: true,
+        attribution: 'rio-tiler-crs',
+        bounds: [[76.79677030658075, -82.93633501037206], [79.34081659677736, -69.69194862994055]]
+      }).addTo(map)
+
+      L.polygon([
+        [76.79677030658075, -82.93633501037206],
+        [76.79677030658075, -69.69194862994055],
+        [79.34081659677736, -69.69194862994055],
+        [79.34081659677736, -82.93633501037206],
+        [76.79677030658075, -82.93633501037206]
+      ]).addTo(map)
+
+
+      // DEBUG
+      L.GridLayer.GridDebug = L.GridLayer.extend({
+        createTile: function (coords) {
+          const tile = document.createElement('div')
+          tile.style.outline = '1px solid green'
+          tile.style.fontWeight = 'bold'
+          tile.style.fontSize = '14pt'
+          tile.innerHTML = [coords.z, coords.x, coords.y].join('/')
+          return tile;
+        },
+      })
+
+      L.gridLayer.gridDebug = function (opts) {
+        return new L.GridLayer.GridDebug(opts)
+      }
+      map.addLayer(L.gridLayer.gridDebug())
+      map.setView([9, 76], 9)
+    </script>
+  
+  </body>
+</html>
