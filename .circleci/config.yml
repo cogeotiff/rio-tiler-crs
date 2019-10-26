@@ -56,21 +56,19 @@ jobs:
       steps:
         - checkout
         - run:
-            command: pip install -e . --user
-        - run:
             name: verify git tag vs. version
             command: |
-              VERSION=$(python -c 'import rio_tiler_crs; print(rio_tiler_crs.version)')
+              VERSION=$(python setup.py --version)
               if [ "$VERSION" = "$CIRCLE_TAG" ]; then exit 0; else exit 3; fi
-        - run:
-            name: install dependencies
-            command: pip install tox --user
         - run:
             name: init .pypirc
             command: |
               echo -e "[pypi]" >> ~/.pypirc
               echo -e "username = $PYPI_USER" >> ~/.pypirc
               echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+        - run:
+            name: install dependencies
+            command: pip install tox --user
         - run:
             name: run tox
             command: ~/.local/bin/tox

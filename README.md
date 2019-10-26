@@ -5,16 +5,10 @@
 [![codecov](https://codecov.io/gh/cogeotiff/rio-tiler-crs/branch/master/graph/badge.svg)](https://circleci.com/gh/cogeotiff/rio-tiler-crs)
 
 
-A rio-tiler plugin to create tiles in other CRS
+WORK IN PROGRESS: A rio-tiler plugin to create tiles in other CRS
 
 ## Install
 
-### Requirements
-
-```bash
-$ pip install rio-tiler-crs
-```
-Or 
 ```bash
 $ git clone http://github.com/cogeotiff/rio-tiler-crs
 $ cd rio-tiler-crs

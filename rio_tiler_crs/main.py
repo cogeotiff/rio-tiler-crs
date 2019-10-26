@@ -1,9 +1,5 @@
 """rio-tiler-crs.main: create tiles."""
 
-from typing import Dict, Tuple
-
-import numpy
-
 import rasterio
 from rasterio.crs import CRS
 from rasterio.warp import transform_bounds
@@ -14,17 +10,17 @@ from rio_tiler_crs import projectile
 
 
 def tile(
-    address: str,
-    tile_x: int,
-    tile_y: int,
-    tile_z: int,
-    tilesize: int = 256,
-    epsg: int = 4326,
-    transform: Tuple = (0.5, 1),
-    **kwargs: Dict
-) -> Tuple[numpy.ndarray, numpy.ndarray]:
+    address,
+    tile_x,
+    tile_y,
+    tile_z,
+    tilesize=256,
+    epsg=4326,
+    transform=(0.5, 1),
+    **kwargs
+):
     """
-    Create mercator tile from any images.
+    Create tile from any images.
 
     Attributes
     ----------
@@ -39,9 +35,9 @@ def tile(
     tilesize : int, optional (default: 256)
         Output image size.
     epsg : int,
-        TODO
-    transfor : tuple,
-        TODO
+        EPSG number for the target coordinate reference system (default: 4326).
+    transform : tuple,
+        (X, Y) grid transformation (default: (0.5, 1) for epsg:4326).
     kwargs: dict, optional
         These will be passed to the 'rio_tiler.utils._tile_read' function.
 
@@ -66,9 +62,7 @@ def tile(
         )
 
     with rasterio.open(address) as src:
-        bounds = transform_bounds(
-            *[src.crs, dst_crs] + list(src.bounds), densify_pts=21
-        )
+        bounds = transform_bounds(src.crs, dst_crs, *src.bounds, densify_pts=21)
 
         tile = projectile.Tile(x=tile_x, y=tile_y, z=tile_z)
         tile_bounds = ts.xy_bounds(*tile)
