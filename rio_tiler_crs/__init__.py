@@ -1,4 +1,4 @@
-"""rio-tiler-crs: Create tiles in different CRS."""
+"""rio-tiler-crs: Create tiles in different projection."""
 
 import pkg_resources
 

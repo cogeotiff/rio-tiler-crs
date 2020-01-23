@@ -27,7 +27,7 @@
       }).addTo(map)
 
       //india
-      L.tileLayer('http://0.0.0.0:8501/tiles/{z}/{x}/{y}.png?filename=india_cog', {
+      L.tileLayer('http://0.0.0.0:8501/tiles/epsg3857/{z}/{x}/{y}.png?filename=india_cog', {
         maxZoom: 12,
         minZoom: 7,
         continuousWorld: true,
@@ -43,14 +43,14 @@
         [7.6179895746159865, 75.32171992018081]
       ]).addTo(map)
 
-      //north
-      L.tileLayer('http://0.0.0.0:8501/tiles/{z}/{x}/{y}.png?filename=north_cog', {
-        maxZoom: 12,
-        minZoom: 7,
-        continuousWorld: true,
-        attribution: 'rio-tiler-crs',
-        bounds: [[76.79677030658075, -82.93633501037206], [79.34081659677736, -69.69194862994055]]
-      }).addTo(map)
+     //north
+     L.tileLayer('http://0.0.0.0:8501/tiles/epsg3857/{z}/{x}/{y}.png?filename=north_cog', {
+       maxZoom: 12,
+       minZoom: 7,
+       continuousWorld: true,
+       attribution: 'rio-tiler-crs',
+       bounds:[[76.79677030658075, -82.93633501037206], [79.34081659677736, -69.69194862994055]]
+     }).addTo(map)
 
       L.polygon([
         [76.79677030658075, -82.93633501037206],

@@ -5,18 +5,18 @@ from setuptools import setup, find_packages
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["rasterio~=1.0.26", "rio-tiler~=1.2.10", "pyproj~=2.3.0"]
+inst_reqs = ["rasterio~=1.1", "rio-tiler~=1.3"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
     "dev": ["pytest", "pytest-cov", "pre-commit"],
 }
 
-
 setup(
     name="rio-tiler-crs",
-    version="0.0.1dev",
-    description=u"""A rio-tiler plugin to create tile of arbitraty grid""",
+    version="0.0.1",
+    python_requires=">=3",
+    description=u"""A rio-tiler plugin to create tile for arbitraty grid""",
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -24,7 +24,7 @@ setup(
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: GIS",
     ],
     keywords="COG GIS",
