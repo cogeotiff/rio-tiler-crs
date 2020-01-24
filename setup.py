@@ -5,10 +5,7 @@ from setuptools import setup, find_packages
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = [
-    "morecantile @ git+https://github.com/developmentseed/morecantile.git",
-    "rio-tiler~=1.3",
-]
+inst_reqs = ["morecantile", "rio-tiler~=1.3"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
