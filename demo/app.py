@@ -1,6 +1,6 @@
 """rio-tiler-crs tile server."""
 
-from typing import BinaryIO
+from typing import BinaryIO, List
 
 import os
 import uvicorn
@@ -9,13 +9,12 @@ import rasterio
 from rasterio.crs import CRS
 from rasterio.warp import transform_bounds
 
+import morecantile
+
 from rio_tiler_crs import tiler
-from rio_tiler_crs.templates import ogc_wmts
-from rio_tiler_crs.projectile import TileSchema
 
 from rio_tiler.profiles import img_profiles
 from rio_tiler.utils import array_to_image
-from rio_tiler.mercator import get_zooms
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -54,6 +53,134 @@ epsg_grid_info = {
     # WGS 84 / UTM zone 18N
     32618: {"extent": [166021.44, 0.00, 534994.66, 9329005.18], "matrix_scale": [1, 1]},
 }
+
+
+def ogc_wmts(
+    endpoint: str,
+    layer: str,
+    ts: morecantile.TileSchema,
+    bounds: List[float] = [-180.0, -90.0, 180.0, 90.0],
+    query_string: str = "",
+    minzoom: int = 0,
+    maxzoom: int = 25,
+    title: str = "Cloud Optimizied GeoTIFF",
+) -> str:
+    """
+    Create WMTS XML template.
+
+    Attributes
+    ----------
+        endpoint : str, required
+            tiler endpoint.
+        layer : str, required
+            Tile matrix set identifier name.
+        ts : morecantile.TileSchema
+            Custom tile schema.
+        bounds : tuple, optional
+            WGS84 layer bounds (default: [-180.0, -90.0, 180.0, 90.0]).
+        query_string : str, optional
+            Endpoint querystring.
+        minzoom : int, optional (default: 0)
+            min zoom.
+        maxzoom : int, optional (default: 25)
+            max zoom.
+        title: str, optional (default: "Cloud Optimizied GeoTIFF")
+            Layer title.
+
+    Returns
+    -------
+        xml : str
+            OGC Web Map Tile Service (WMTS) XML template.
+
+    """
+    content_type = f"image/png"
+
+    tileMatrix = []
+    for zoom in range(minzoom, maxzoom + 1):
+        meta = ts.get_ogc_tilematrix(zoom)
+        tm = f"""
+                <TileMatrix>
+                    <ows:Identifier>{zoom}</ows:Identifier>
+                    <ScaleDenominator>{meta["scaleDenominator"]}</ScaleDenominator>
+                    <TopLeftCorner>{meta["topLeftCorner"][0]} {meta["topLeftCorner"][1]}</TopLeftCorner>
+                    <TileWidth>{meta["tileWidth"]}</TileWidth>
+                    <TileHeight>{meta["tileHeight"]}</TileHeight>
+                    <MatrixWidth>{meta["matrixWidth"]}</MatrixWidth>
+                    <MatrixHeight>{meta["matrixHeight"]}</MatrixHeight>
+                </TileMatrix>"""
+        tileMatrix.append(tm)
+    tileMatrix = "\n".join(tileMatrix)
+
+    xml = f"""<Capabilities
+        xmlns="http://www.opengis.net/wmts/1.0"
+        xmlns:ows="http://www.opengis.net/ows/1.1"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:gml="http://www.opengis.net/gml"
+        xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
+        version="1.0.0">
+        <ows:ServiceIdentification>
+            <ows:Title>{title}</ows:Title>
+            <ows:ServiceType>OGC WMTS</ows:ServiceType>
+            <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+        </ows:ServiceIdentification>
+        <ows:OperationsMetadata>
+            <ows:Operation name="GetCapabilities">
+                <ows:DCP>
+                    <ows:HTTP>
+                        <ows:Get xlink:href="{endpoint}/{layer}/wmts?{query_string}">
+                            <ows:Constraint name="GetEncoding">
+                                <ows:AllowedValues>
+                                    <ows:Value>RESTful</ows:Value>
+                                </ows:AllowedValues>
+                            </ows:Constraint>
+                        </ows:Get>
+                    </ows:HTTP>
+                </ows:DCP>
+            </ows:Operation>
+            <ows:Operation name="GetTile">
+                <ows:DCP>
+                    <ows:HTTP>
+                        <ows:Get xlink:href="{endpoint}/{layer}/wmts?{query_string}">
+                            <ows:Constraint name="GetEncoding">
+                                <ows:AllowedValues>
+                                    <ows:Value>RESTful</ows:Value>
+                                </ows:AllowedValues>
+                            </ows:Constraint>
+                        </ows:Get>
+                    </ows:HTTP>
+                </ows:DCP>
+            </ows:Operation>
+        </ows:OperationsMetadata>
+        <Contents>
+            <Layer>
+                <ows:Identifier>{layer}</ows:Identifier>
+                <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
+                    <ows:LowerCorner>{bounds[0]} {bounds[1]}</ows:LowerCorner>
+                    <ows:UpperCorner>{bounds[2]} {bounds[3]}</ows:UpperCorner>
+                </ows:WGS84BoundingBox>
+                <Style isDefault="true">
+                    <ows:Identifier>default</ows:Identifier>
+                </Style>
+                <Format>{content_type}</Format>
+                <TileMatrixSetLink>
+                    <TileMatrixSet>{layer}</TileMatrixSet>
+                </TileMatrixSetLink>
+                <ResourceURL
+                    format="{content_type}"
+                    resourceType="tile"
+                    template="{endpoint}/tiles/{layer}/{{TileMatrix}}/{{TileCol}}/{{TileRow}}.png?{query_string}"/>
+            </Layer>
+            <TileMatrixSet>
+                <ows:Identifier>{layer}</ows:Identifier>
+                <ows:SupportedCRS>EPSG:{ts.crs.to_epsg()}</ows:SupportedCRS>
+                {tileMatrix}
+            </TileMatrixSet>
+        </Contents>
+        <ServiceMetadataURL xlink:href='{endpoint}/{layer}/wmts?{query_string}'/>
+    </Capabilities>"""
+
+    return xml
 
 
 app = FastAPI(
@@ -105,7 +232,7 @@ async def _tile(
     except KeyError:
         raise Exception(f"EPSG:{epsg} is not supported")
 
-    ts = TileSchema(crs=CRS.from_epsg(epsg), **args)
+    ts = morecantile.TileSchema(crs=CRS.from_epsg(epsg), **args)
     tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=256, tileSchema=ts)
 
     options = img_profiles.get("png", {})
@@ -138,12 +265,12 @@ async def _wmts(
     except KeyError:
         raise Exception(f"EPSG:{epsg} is not supported")
 
-    ts = TileSchema(crs=CRS.from_epsg(epsg), **args)
+    ts = morecantile.TileSchema(crs=CRS.from_epsg(epsg), **args)
     with rasterio.open(f"{filename}.tif") as src_dst:
         bounds = transform_bounds(
             src_dst.crs, "epsg:4326", *src_dst.bounds, densify_pts=21
         )
-        minzoom, maxzoom = get_zooms(src_dst)
+        minzoom, maxzoom = tiler.get_zooms(src_dst, tileSchema=ts)
 
     return XMLResponse(
         ogc_wmts(
