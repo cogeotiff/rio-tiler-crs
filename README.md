@@ -4,8 +4,8 @@ A rio-tiler plugin to create tiles in different projection
 
 
 [![Packaging status](https://badge.fury.io/py/rio-tiler-crs.svg)](https://badge.fury.io/py/rio-tiler-crs)
-[![CircleCI](https://circleci.com/gh/cogeotiff/rio-tiler-crs.svg?style=svg)](https://codecov.io/gh/cogeotiff/rio-tiler-crs)
-[![codecov](https://codecov.io/gh/cogeotiff/rio-tiler-crs/branch/master/graph/badge.svg)](https://circleci.com/gh/cogeotiff/rio-tiler-crs)
+[![CircleCI](https://circleci.com/gh/cogeotiff/rio-tiler-crs.svg?style=svg)](https://circleci.com/gh/cogeotiff/rio-tiler-crss)
+[![codecov](https://codecov.io/gh/cogeotiff/rio-tiler-crs/branch/master/graph/badge.svg)](https://codecov.io/gh/cogeotiff/rio-tiler-cr)
 
 ![](https://user-images.githubusercontent.com/10407788/73080923-9d198a00-3e94-11ea-9644-ce39ffb3882a.jpg)
 
@@ -13,6 +13,12 @@ A rio-tiler plugin to create tiles in different projection
 ## Install
 
 ```bash
+
+$ pip install pip -U
+$ pip install rio-tiler-crs
+
+# Or using source
+
 $ pip install git+http://github.com/cogeotiff/rio-tiler-crs
 ```
 
