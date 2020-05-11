@@ -1,68 +1,91 @@
 """rio-tiler-crs tile server."""
 
-from typing import BinaryIO, List
-
+import logging
 import os
-import uvicorn
-
-import rasterio
-from rasterio.crs import CRS
-from rasterio.warp import transform_bounds
+from enum import Enum
+from typing import Any, Dict, List
 
 import morecantile
+import rasterio
+import uvicorn
+from fastapi import FastAPI, Path, Query
+from rasterio.crs import CRS
+from rasterio.warp import transform_bounds
+from rio_tiler.profiles import img_profiles
+from rio_tiler.utils import render
+from starlette.background import BackgroundTask
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from rio_tiler_crs import tiler
 
-from rio_tiler.profiles import img_profiles
-from rio_tiler.utils import array_to_image
+log = logging.getLogger()
 
-from starlette.requests import Request
-from starlette.responses import Response
-from starlette.middleware.cors import CORSMiddleware
-from starlette.middleware.gzip import GZipMiddleware
-from fastapi import FastAPI, Path, Query
+# From developmentseed/titiler
+drivers = dict(jpg="JPEG", png="PNG", tif="GTiff", webp="WEBP")
+mimetype = dict(
+    png="image/png",
+    npy="application/x-binary",
+    tif="image/tiff",
+    jpg="image/jpg",
+    webp="image/webp",
+)
+WGS84_CRS = CRS.from_epsg(4326)
+
+# CUSTOM TMS for EPSG:3413
+extent = (-2353926.81, 2345724.36, -382558.89, 383896.60)
+crs = CRS.from_epsg(3413)
+EPSG3413 = morecantile.TileMatrixSet.custom(extent, crs)
 
 
-wm_bounds = [
-    -20037508.342789244,
-    -20037508.342789244,
-    20037508.342789244,
-    20037508.342789244,
-]
-# list of supported projection
-epsg_grid_info = {
-    # WGS 84 - WGS84 - World Geodetic System 1984
-    4326: {"extent": [-180, -90, 180, 90], "matrix_scale": [2, 1]},
-    # WGS 84 / NSIDC Sea Ice Polar Stereographic North
-    3413: {
-        "extent": [-2353926.81, 2345724.36, -382558.89, 383896.60],
-        "matrix_scale": [1, 1],
-    },
-    # WGS 84 / Antarctic Polar Stereographic
-    3031: {
-        "extent": [-948.75, -543592.47, 5817.41, -3333128.95],
-        "matrix_scale": [1, 1],
-    },
-    # ETRS89-extended / LAEA Europe
-    3035: {
-        "extent": [1896628.62, 1507846.05, 4662111.45, 6829874.45],
-        "matrix_scale": [1, 1],
-    },
-    # WGS 84 / Pseudo-Mercator - Spherical Mercator, Google Maps, OpenStreetMap, Bing, ArcGIS, ESRI
-    3857: {"extent": wm_bounds, "matrix_scale": [1, 1]},
-    # WGS 84 / UTM zone 18N
-    32618: {"extent": [166021.44, 0.00, 534994.66, 9329005.18], "matrix_scale": [1, 1]},
-}
+class ImageType(str, Enum):
+    """Image Type Enums."""
+
+    png = "png"
+    npy = "npy"
+    tif = "tif"
+    jpg = "jpg"
+    webp = "webp"
+
+
+class XMLResponse(Response):
+    """XML Response"""
+
+    media_type = "application/xml"
+
+
+class TileResponse(Response):
+    """Tiler's response."""
+
+    def __init__(
+        self,
+        content: bytes,
+        media_type: str,
+        status_code: int = 200,
+        headers: dict = {},
+        background: BackgroundTask = None,
+        ttl: int = 3600,
+    ) -> None:
+        """Init tiler response."""
+        headers.update({"Content-Type": media_type})
+        if ttl:
+            headers.update({"Cache-Control": "max-age=3600"})
+        self.body = self.render(content)
+        self.status_code = 200
+        self.media_type = media_type
+        self.background = background
+        self.init_headers(headers)
 
 
 def ogc_wmts(
     endpoint: str,
-    layer: str,
-    ts: morecantile.TileSchema,
+    tms: morecantile.TileMatrixSet,
     bounds: List[float] = [-180.0, -90.0, 180.0, 90.0],
-    query_string: str = "",
     minzoom: int = 0,
-    maxzoom: int = 25,
+    maxzoom: int = 24,
+    query_string: str = "",
     title: str = "Cloud Optimizied GeoTIFF",
 ) -> str:
     """
@@ -70,46 +93,45 @@ def ogc_wmts(
 
     Attributes
     ----------
-        endpoint : str, required
-            tiler endpoint.
-        layer : str, required
-            Tile matrix set identifier name.
-        ts : morecantile.TileSchema
-            Custom tile schema.
-        bounds : tuple, optional
-            WGS84 layer bounds (default: [-180.0, -90.0, 180.0, 90.0]).
-        query_string : str, optional
-            Endpoint querystring.
-        minzoom : int, optional (default: 0)
-            min zoom.
-        maxzoom : int, optional (default: 25)
-            max zoom.
-        title: str, optional (default: "Cloud Optimizied GeoTIFF")
-            Layer title.
+    endpoint : str, required
+        tiler endpoint.
+    tms : morecantile.TileMatrixSet
+        Custom Tile Matrix Set.
+    bounds : tuple, optional
+        WGS84 layer bounds (default: [-180.0, -90.0, 180.0, 90.0]).
+    query_string : str, optional
+        Endpoint querystring.
+    minzoom : int, optional (default: 0)
+        min zoom.
+    maxzoom : int, optional (default: 25)
+        max zoom.
+    title: str, optional (default: "Cloud Optimizied GeoTIFF")
+        Layer title.
 
     Returns
     -------
-        xml : str
-            OGC Web Map Tile Service (WMTS) XML template.
+    xml : str
+        OGC Web Map Tile Service (WMTS) XML template.
 
     """
     content_type = f"image/png"
+    layer = tms.identifier
 
-    tileMatrix = []
+    tileMatrixArray = []
     for zoom in range(minzoom, maxzoom + 1):
-        meta = ts.get_ogc_tilematrix(zoom)
+        matrix = tms.matrix(zoom)
         tm = f"""
                 <TileMatrix>
-                    <ows:Identifier>{zoom}</ows:Identifier>
-                    <ScaleDenominator>{meta["scaleDenominator"]}</ScaleDenominator>
-                    <TopLeftCorner>{meta["topLeftCorner"][0]} {meta["topLeftCorner"][1]}</TopLeftCorner>
-                    <TileWidth>{meta["tileWidth"]}</TileWidth>
-                    <TileHeight>{meta["tileHeight"]}</TileHeight>
-                    <MatrixWidth>{meta["matrixWidth"]}</MatrixWidth>
-                    <MatrixHeight>{meta["matrixHeight"]}</MatrixHeight>
+                    <ows:Identifier>{matrix.identifier}</ows:Identifier>
+                    <ScaleDenominator>{matrix.scaleDenominator}</ScaleDenominator>
+                    <TopLeftCorner>{matrix.topLeftCorner[0]} {matrix.topLeftCorner[1]}</TopLeftCorner>
+                    <TileWidth>{matrix.tileWidth}</TileWidth>
+                    <TileHeight>{matrix.tileHeight}</TileHeight>
+                    <MatrixWidth>{matrix.matrixWidth}</MatrixWidth>
+                    <MatrixHeight>{matrix.matrixHeight}</MatrixHeight>
                 </TileMatrix>"""
-        tileMatrix.append(tm)
-    tileMatrix = "\n".join(tileMatrix)
+        tileMatrixArray.append(tm)
+    tileMatrix = "\n".join(tileMatrixArray)
 
     xml = f"""<Capabilities
         xmlns="http://www.opengis.net/wmts/1.0"
@@ -173,7 +195,7 @@ def ogc_wmts(
             </Layer>
             <TileMatrixSet>
                 <ows:Identifier>{layer}</ows:Identifier>
-                <ows:SupportedCRS>EPSG:{ts.crs.to_epsg()}</ows:SupportedCRS>
+                <ows:SupportedCRS>EPSG:{tms.crs.to_epsg()}</ows:SupportedCRS>
                 {tileMatrix}
             </TileMatrixSet>
         </Contents>
@@ -196,87 +218,85 @@ app.add_middleware(
 )
 app.add_middleware(GZipMiddleware, minimum_size=0)
 
-
-def TileResponse(content: BinaryIO, media_type: str) -> Response:
-    """Binary tile response."""
-    headers = {"Content-Type": f"image/{media_type}"}
-    return Response(
-        content=content,
-        status_code=200,
-        headers=headers,
-        media_type=f"image/{media_type}",
-    )
-
-
-class XMLResponse(Response):
-    """XML response."""
-
-    media_type = "application/xml"
-
-
-@app.get(
-    "/tiles/epsg{epsg}/{z}/{x}/{y}\\.png",
-    responses={200: {"content": {"image/png": {}}, "description": "Return an image."}},
-    description="Read COG and return a tile",
+responses = {
+    200: {
+        "content": {
+            "image/png": {},
+            "image/jpg": {},
+            "image/webp": {},
+            "image/tiff": {},
+            "application/x-binary": {},
+        },
+        "description": "Return an image.",
+    }
+}
+tile_routes_params: Dict[str, Any] = dict(
+    responses=responses, tags=["tiles"], response_class=TileResponse
 )
-async def _tile(
+
+
+@app.get("/tiles/{z}/{x}/{y}\\.png", **tile_routes_params)
+@app.get("/tiles/{identifier}/{z}/{x}/{y}\\.png", **tile_routes_params)
+def _tile(
     z: int,
     x: int,
     y: int,
-    epsg: int = Path(4326, title="EPSG code"),
+    identifier: str = Query("WebMercatorQuad", title="TMS identifier"),
     filename: str = Query(...),
 ):
     """Handle /tiles requests."""
-    try:
-        args = epsg_grid_info[epsg]
-    except KeyError:
-        raise Exception(f"EPSG:{epsg} is not supported")
+    if identifier == "EPSG3413":
+        tms = EPSG3413
+    else:
+        tms = morecantile.TileMatrixSet.load(identifier)
 
-    ts = morecantile.TileSchema(crs=CRS.from_epsg(epsg), **args)
-    tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=256, tileSchema=ts)
+    tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=256, tms=tms)
 
-    options = img_profiles.get("png", {})
-    img = array_to_image(tile, mask, img_format="png", **options)
-    return TileResponse(img, media_type="png")
+    ext = ImageType.png
+    driver = drivers[ext.value]
+    options = img_profiles.get(driver.lower(), {})
+
+    img = render(tile, mask, img_format="png", **options)
+
+    return TileResponse(img, media_type=mimetype[ext.value])
 
 
 @app.get(
-    "/epsg{epsg}/wmts",
-    responses={
-        200: {
-            "content": {"application/xml": {}},
-            "description": "Return an OGC WMTS document.",
-        }
-    },
+    r"/WMTSCapabilities.xml",
+    responses={200: {"content": {"application/xml": {}}}},
+    response_class=XMLResponse,
 )
-async def _wmts(
+@app.get(
+    r"/{identifier}/WMTSCapabilities.xml",
+    responses={200: {"content": {"application/xml": {}}}},
+    response_class=XMLResponse,
+)
+def _wmts(
     request: Request,
     response: Response,
-    epsg: int = Path(4326, title="EPSG code"),
+    identifier: str = Path("WebMercatorQuad", title="TMS identifier"),
     filename: str = Query(...),
 ):
     """Handle /tiles requests."""
+    if identifier == "EPSG3413":
+        tms = EPSG3413
+    else:
+        tms = morecantile.TileMatrixSet.load(identifier)
+
     host = request.headers["host"]
     scheme = request.url.scheme
     endpoint = f"{scheme}://{host}"
 
-    try:
-        args = epsg_grid_info[epsg]
-    except KeyError:
-        raise Exception(f"EPSG:{epsg} is not supported")
-
-    ts = morecantile.TileSchema(crs=CRS.from_epsg(epsg), **args)
     with rasterio.open(f"{filename}.tif") as src_dst:
         bounds = transform_bounds(
-            src_dst.crs, "epsg:4326", *src_dst.bounds, densify_pts=21
+            src_dst.crs, WGS84_CRS, *src_dst.bounds, densify_pts=21
         )
-        minzoom, maxzoom = tiler.get_zooms(src_dst, tileSchema=ts)
+        minzoom, maxzoom = tiler.get_zooms(src_dst, tms)
 
     return XMLResponse(
         ogc_wmts(
             endpoint,
-            f"epsg{epsg}",
-            ts,
+            tms,
             bounds=bounds,
             query_string=f"filename={filename}",
             minzoom=minzoom,

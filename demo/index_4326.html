@@ -27,7 +27,7 @@
       }).addTo(map)
     
       //india
-      L.tileLayer('http://0.0.0.0:8501/tiles/epsg4326/{z}/{x}/{y}.png?filename=india_cog', {
+      L.tileLayer('http://0.0.0.0:8501/tiles/WorldCRS84Quad/{z}/{x}/{y}.png?filename=india_cog', {
         maxZoom: 12,
         minZoom: 7,
         continuousWorld: true,
@@ -44,7 +44,7 @@
       ]).addTo(map)
 
       //north
-      L.tileLayer('http://0.0.0.0:8501/tiles/epsg4326/{z}/{x}/{y}.png?filename=north_cog', {
+      L.tileLayer('http://0.0.0.0:8501/tiles/WorldCRS84Quad/{z}/{x}/{y}.png?filename=north_cog', {
         maxZoom: 12,
         minZoom: 7,
         continuousWorld: true,
