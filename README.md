@@ -31,7 +31,7 @@ import morecantile
 from rasterio.crs import CRS
 
 # Use default TMS
-tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+tms = morecantile.tms.get("WorldCRS84Quad")
 
 # or create a custom TMS
 crs = CRS.from_epsg(3031)  # Morecantile TileMatrixSet uses Rasterio CRS object
@@ -52,7 +52,7 @@ tile, mask = tiler.tile("myfile.tif", 10, 10, 4, tms=tms)
 - **rio_tiler_crs.tiler.get_zoom**: Get Min/Max zoom for a specific Raster in a specific TMS system
 
 ```python
-tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+tms = morecantile.tms.get("WorldCRS84Quad")
 with rasterio.open("myfile.tif") as src_dst:
     minzoom, maxzoom = tiler.get_zoom(src_dst, tms)
 ```
@@ -60,7 +60,7 @@ with rasterio.open("myfile.tif") as src_dst:
 - **rio_tiler_crs.tiler.spatial_info**: Return Raster spatial info for a specific TMS system
 
 ```python
-tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+tms = morecantile.tms.get("WorldCRS84Quad")
 tiler.spatial_info("myfile.tif", tms)
 {
     "address": "myfile.tif",
@@ -89,7 +89,7 @@ tiler.bounds("myfile.tif", dst_crs)
 - **rio_tiler_crs.tiler.info**: Return simple metadata about the raster
 
 ```python
-tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+tms = morecantile.tms.get("WorldCRS84Quad")
 tiler.info("myfile.tif", tms)
 
 {
@@ -112,7 +112,7 @@ tiler.info("myfile.tif", tms)
 - **rio_tiler_crs.tiler.tile**: Return map tile from a raster
 
 ```python
-tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+tms = morecantile.tms.get("WorldCRS84Quad")
 tile, mask = tiler.tile("myfile.tif", 1, 2, 3, 256, tms)
 ```
 

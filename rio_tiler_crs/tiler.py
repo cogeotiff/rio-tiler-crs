@@ -12,7 +12,7 @@ from rio_tiler.errors import TileOutsideBounds
 from rio_tiler.io import cogeo
 from rio_tiler.utils import has_alpha_band, has_mask_band
 
-default_tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+default_tms = morecantile.tms.get("WebMercatorQuad")
 metadata = cogeo.metadata
 
 

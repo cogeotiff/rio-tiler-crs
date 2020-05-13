@@ -37,7 +37,8 @@ WGS84_CRS = CRS.from_epsg(4326)
 # CUSTOM TMS for EPSG:3413
 extent = (-2353926.81, 2345724.36, -382558.89, 383896.60)
 crs = CRS.from_epsg(3413)
-EPSG3413 = morecantile.TileMatrixSet.custom(extent, crs)
+EPSG3413 = morecantile.TileMatrixSet.custom(extent, crs, identifier="EPSG3413")
+morecantile.tms.register(EPSG3413)
 
 
 class ImageType(str, Enum):
@@ -245,10 +246,7 @@ def _tile(
     filename: str = Query(...),
 ):
     """Handle /tiles requests."""
-    if identifier == "EPSG3413":
-        tms = EPSG3413
-    else:
-        tms = morecantile.TileMatrixSet.load(identifier)
+    tms = morecantile.tms.get(identifier)
 
     tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=256, tms=tms)
 
@@ -278,10 +276,7 @@ def _wmts(
     filename: str = Query(...),
 ):
     """Handle /tiles requests."""
-    if identifier == "EPSG3413":
-        tms = EPSG3413
-    else:
-        tms = morecantile.TileMatrixSet.load(identifier)
+    tms = morecantile.tms.get(identifier)
 
     host = request.headers["host"]
     scheme = request.url.scheme
