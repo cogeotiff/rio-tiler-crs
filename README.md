@@ -36,7 +36,7 @@ tms = morecantile.tms.get("WorldCRS84Quad")
 # or create a custom TMS
 crs = CRS.from_epsg(3031)  # Morecantile TileMatrixSet uses Rasterio CRS object
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-tms = morecantile.TileMatrixSet(extent, crs)
+tms = morecantile.TileMatrixSet.custom(extent, crs)
 ```
 
 2. read tile
