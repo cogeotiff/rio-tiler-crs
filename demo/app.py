@@ -115,7 +115,7 @@ def ogc_wmts(
         OGC Web Map Tile Service (WMTS) XML template.
 
     """
-    content_type = f"image/png"
+    content_type = "image/png"
     layer = tms.identifier
 
     tileMatrixArray = []
