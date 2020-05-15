@@ -90,3 +90,13 @@ def test_info():
     assert info["minzoom"] == 4
     assert info["maxzoom"] == 8
     assert info["center"][-1] == 4
+
+
+def test_GTiffOptions():
+    """Test rio_tiler_crs.tiler.geotiff_options function with different projection."""
+    info = tiler.geotiff_options(1, 1, 1)
+    assert info["crs"] == CRS.from_epsg(3857)
+
+    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    info = tiler.geotiff_options(1, 1, 1, tms=tms)
+    assert info["crs"] == CRS.from_epsg(4326)

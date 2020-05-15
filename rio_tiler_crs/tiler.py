@@ -6,6 +6,7 @@ import morecantile
 import numpy
 import rasterio
 from rasterio.crs import CRS
+from rasterio.transform import from_bounds
 from rasterio.warp import calculate_default_transform, transform_bounds
 from rio_tiler import constants, reader
 from rio_tiler.errors import TileOutsideBounds
@@ -24,6 +25,39 @@ def _tile_exists(raster_bounds, tile_bounds):
         and (tile_bounds[3] > raster_bounds[1])
         and (tile_bounds[1] < raster_bounds[3])
     )
+
+
+def geotiff_options(
+    x: int,
+    y: int,
+    z: int,
+    tilesize: int = 256,
+    tms: morecantile.TileMatrixSet = default_tms,
+) -> Dict:
+    """
+    GeoTIFF options.
+
+    Attributes
+    ----------
+    x : int
+        Mercator tile X index.
+    y : int
+        Mercator tile Y index.
+    z : int
+        Mercator tile ZOOM level.
+    tilesize : int, optional
+        Output tile size. Default is 256.
+    tms : morecantile.TileMatrixSet
+        morecantile TileMatrixSet to use (default: WebMercator).
+
+    Returns
+    -------
+    dict
+
+    """
+    bounds = tms.xy_bounds(morecantile.Tile(x=x, y=y, z=z))
+    dst_transform = from_bounds(*bounds, tilesize, tilesize)
+    return dict(crs=tms.crs, transform=dst_transform)
 
 
 def get_zooms(src_dst, tms: morecantile.TileMatrixSet = default_tms) -> Tuple[int, int]:
@@ -110,6 +144,7 @@ def bounds(address: str, dst_crs: CRS = constants.WGS84_CRS) -> Dict:
     """
     with rasterio.open(address) as src_dst:
         bounds = transform_bounds(src_dst.crs, dst_crs, *src_dst.bounds, densify_pts=21)
+
     return dict(address=address, bounds=bounds)
 
 
