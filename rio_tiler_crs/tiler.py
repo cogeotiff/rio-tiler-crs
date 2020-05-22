@@ -1,12 +1,14 @@
 """rio-tiler-crs.main: create tiles."""
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import morecantile
 import numpy
 import rasterio
 from rasterio.crs import CRS
+from rasterio.io import DatasetReader, DatasetWriter
 from rasterio.transform import from_bounds
+from rasterio.vrt import WarpedVRT
 from rasterio.warp import calculate_default_transform, transform_bounds
 from rio_tiler import constants, reader
 from rio_tiler.errors import TileOutsideBounds
@@ -14,7 +16,11 @@ from rio_tiler.io import cogeo
 from rio_tiler.utils import has_alpha_band, has_mask_band
 
 default_tms = morecantile.tms.get("WebMercatorQuad")
+
+# Default from rio_tiler
 metadata = cogeo.metadata
+point = cogeo.point
+area = cogeo.area
 
 
 def _tile_exists(raster_bounds, tile_bounds):
@@ -117,7 +123,9 @@ def spatial_info(address: str, tms: morecantile.TileMatrixSet = default_tms) -> 
     """
     with rasterio.open(address) as src_dst:
         minzoom, maxzoom = get_zooms(src_dst, tms)
-        bounds = transform_bounds(src_dst.crs, tms.crs, *src_dst.bounds, densify_pts=21)
+        bounds = transform_bounds(
+            src_dst.crs, constants.WGS84_CRS, *src_dst.bounds, densify_pts=21
+        )
         center = ((bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2, minzoom)
 
     return dict(
@@ -166,7 +174,9 @@ def info(address: str, tms: morecantile.TileMatrixSet = default_tms) -> Dict:
     """
     with rasterio.open(address) as src_dst:
         minzoom, maxzoom = get_zooms(src_dst, tms)
-        bounds = transform_bounds(src_dst.crs, tms.crs, *src_dst.bounds, densify_pts=21)
+        bounds = transform_bounds(
+            src_dst.crs, constants.WGS84_CRS, *src_dst.bounds, densify_pts=21
+        )
         center = [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2, minzoom]
 
         def _get_descr(ix):
@@ -214,21 +224,69 @@ def info(address: str, tms: morecantile.TileMatrixSet = default_tms) -> Dict:
         )
 
 
-def tile(
-    address: str,
+def _tile(
+    src_dst: Union[DatasetReader, DatasetWriter, WarpedVRT],
     tile_x: int,
     tile_y: int,
     tile_z: int,
     tilesize: int = 256,
     tms: morecantile.TileMatrixSet = default_tms,
-    **kwargs: Any
+    **kwargs: Any,
+) -> Tuple[numpy.ndarray, numpy.ndarray]:
+    """
+    Attributes
+    ----------
+    address : rasterio.io.DatasetReader
+        rasterio.io.DatasetReader object.
+    tile_x : int
+        Mercator tile X index.
+    tile_y : int
+        Mercator tile Y index.
+    tile_z : int
+        Mercator tile ZOOM level.
+    tilesize : int, optional (default: 256)
+        Output image size.
+    tms : morecantile.TileMatrixSet
+        morecantile TileMatrixSet to use (default: WebMercator).
+    kwargs: dict, optional
+        These will be passed to the 'rio_tiler.utils._tile_read' function.
+
+    Returns
+    -------
+    data : numpy ndarray
+    mask: numpy array
+
+    """
+    raster_bounds = transform_bounds(
+        src_dst.crs, tms.crs, *src_dst.bounds, densify_pts=21
+    )
+    tile = morecantile.Tile(x=tile_x, y=tile_y, z=tile_z)
+    tile_bounds = tms.xy_bounds(*tile)
+    if not _tile_exists(raster_bounds, tile_bounds):
+        raise TileOutsideBounds(
+            "Tile {}/{}/{} is outside image bounds".format(tile_z, tile_x, tile_y)
+        )
+
+    return reader.part(
+        src_dst, tile_bounds, tilesize, tilesize, dst_crs=tms.crs, **kwargs,
+    )
+
+
+def tile(
+    src_path: Union[DatasetReader, DatasetWriter, WarpedVRT, str],
+    tile_x: int,
+    tile_y: int,
+    tile_z: int,
+    tilesize: int = 256,
+    tms: morecantile.TileMatrixSet = default_tms,
+    **kwargs: Any,
 ) -> Tuple[numpy.ndarray, numpy.ndarray]:
     """
     Create tile from any images.
 
     Attributes
     ----------
-    address : str
+    address : str or rasterio dataset
         file url.
     tile_x : int
         Mercator tile X index.
@@ -245,21 +303,12 @@ def tile(
 
     Returns
     -------
-        data : numpy ndarray
-        mask: numpy array
+    data : numpy ndarray
+    mask: numpy array
 
     """
-    with rasterio.open(address) as src_dst:
-        raster_bounds = transform_bounds(
-            src_dst.crs, tms.crs, *src_dst.bounds, densify_pts=21
-        )
-        tile = morecantile.Tile(x=tile_x, y=tile_y, z=tile_z)
-        tile_bounds = tms.xy_bounds(*tile)
-        if not _tile_exists(raster_bounds, tile_bounds):
-            raise TileOutsideBounds(
-                "Tile {}/{}/{} is outside image bounds".format(tile_z, tile_x, tile_y)
-            )
-
-        return reader.part(
-            src_dst, tile_bounds, tilesize, tilesize, dst_crs=tms.crs, **kwargs,
-        )
+    if isinstance(src_path, (DatasetReader, DatasetWriter, WarpedVRT)):
+        return _tile(src_path, tile_x, tile_y, tile_z, tilesize, tms=tms, **kwargs)
+    else:
+        with rasterio.open(src_path) as src_dst:
+            return _tile(src_dst, tile_x, tile_y, tile_z, tilesize, tms=tms, **kwargs)

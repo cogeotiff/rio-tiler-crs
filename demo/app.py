@@ -35,9 +35,11 @@ mimetype = dict(
 WGS84_CRS = CRS.from_epsg(4326)
 
 # CUSTOM TMS for EPSG:3413
-extent = (-2353926.81, 2345724.36, -382558.89, 383896.60)
+extent = (-4194300, -4194300, 4194300, 4194300)
 crs = CRS.from_epsg(3413)
-EPSG3413 = morecantile.TileMatrixSet.custom(extent, crs, identifier="EPSG3413")
+EPSG3413 = morecantile.TileMatrixSet.custom(
+    extent, crs, identifier="EPSG3413", matrix_scale=[2, 2]
+)
 morecantile.tms.register(EPSG3413)
 
 
@@ -236,19 +238,25 @@ tile_routes_params: Dict[str, Any] = dict(
 )
 
 
-@app.get("/tiles/{z}/{x}/{y}\\.png", **tile_routes_params)
-@app.get("/tiles/{identifier}/{z}/{x}/{y}\\.png", **tile_routes_params)
+@app.get(r"/tiles/{z}/{x}/{y}\.png", **tile_routes_params)
+@app.get(r"/tiles/{identifier}/{z}/{x}/{y}\.png", **tile_routes_params)
+@app.get(r"/tiles/{z}/{x}/{y}@{scale}x\.png", **tile_routes_params)
+@app.get(r"/tiles/{identifier}/{z}/{x}/{y}@{scale}x\.png", **tile_routes_params)
 def _tile(
     z: int,
     x: int,
     y: int,
+    scale: int = Query(
+        1, gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
+    ),
     identifier: str = Query("WebMercatorQuad", title="TMS identifier"),
     filename: str = Query(...),
 ):
     """Handle /tiles requests."""
     tms = morecantile.tms.get(identifier)
+    tilesize = scale * 256
 
-    tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=256, tms=tms)
+    tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=tilesize, tms=tms)
 
     ext = ImageType.png
     driver = drivers[ext.value]

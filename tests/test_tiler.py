@@ -19,7 +19,7 @@ def test_tiler_tiles():
     lat = 73.8794
     zoom = 7
 
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     x, y, z = tms.tile(lon, lat, zoom)
 
     data, mask = tiler.tile(COG_PATH, x, y, z, tms=tms)
@@ -47,7 +47,7 @@ def test_get_zoom():
         assert minzoom == 5
         assert maxzoom == 8
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     with rasterio.open(COG_PATH) as src_dst:
         minzoom, maxzoom = tiler.get_zooms(src_dst, tms)
         assert minzoom == 4
@@ -61,7 +61,7 @@ def test_spatial_info():
     assert info["maxzoom"] == 8
     assert info["center"][-1] == 5
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     info = tiler.spatial_info(COG_PATH, tms)
     assert info["minzoom"] == 4
     assert info["maxzoom"] == 8
@@ -85,7 +85,7 @@ def test_info():
     assert info["maxzoom"] == 8
     assert info["center"][-1] == 5
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     info = tiler.info(COG_PATH, tms)
     assert info["minzoom"] == 4
     assert info["maxzoom"] == 8
@@ -97,6 +97,6 @@ def test_GTiffOptions():
     info = tiler.geotiff_options(1, 1, 1)
     assert info["crs"] == CRS.from_epsg(3857)
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     info = tiler.geotiff_options(1, 1, 1, tms=tms)
     assert info["crs"] == CRS.from_epsg(4326)
