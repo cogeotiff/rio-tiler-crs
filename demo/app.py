@@ -6,20 +6,18 @@ from enum import Enum
 from typing import Any, Dict, List
 
 import morecantile
-import rasterio
 import uvicorn
 from fastapi import FastAPI, Path, Query
 from rasterio.crs import CRS
-from rasterio.warp import transform_bounds
-from rio_tiler.profiles import img_profiles
-from rio_tiler.utils import render
 from starlette.background import BackgroundTask
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from rio_tiler_crs import tiler
+from rio_tiler.profiles import img_profiles
+from rio_tiler.utils import render
+from rio_tiler_crs import COGReader
 
 log = logging.getLogger()
 
@@ -254,9 +252,8 @@ def _tile(
 ):
     """Handle /tiles requests."""
     tms = morecantile.tms.get(identifier)
-    tilesize = scale * 256
-
-    tile, mask = tiler.tile(f"{filename}.tif", x, y, z, tilesize=tilesize, tms=tms)
+    with COGReader(f"{filename}.tif", tms=tms) as cog:
+        tile, mask = cog.tile(x, y, z, tilesize=scale * 256)
 
     ext = ImageType.png
     driver = drivers[ext.value]
@@ -290,23 +287,20 @@ def _wmts(
     scheme = request.url.scheme
     endpoint = f"{scheme}://{host}"
 
-    with rasterio.open(f"{filename}.tif") as src_dst:
-        bounds = transform_bounds(
-            src_dst.crs, WGS84_CRS, *src_dst.bounds, densify_pts=21
-        )
-        minzoom, maxzoom = tiler.get_zooms(src_dst, tms)
+    with COGReader(f"{filename}.tif", tms=tms) as cog:
+        meta = cog.info
 
-    return XMLResponse(
-        ogc_wmts(
-            endpoint,
-            tms,
-            bounds=bounds,
-            query_string=f"filename={filename}",
-            minzoom=minzoom,
-            maxzoom=maxzoom,
-            title=os.path.basename(filename),
+        return XMLResponse(
+            ogc_wmts(
+                endpoint,
+                tms,
+                bounds=meta["bounds"],
+                query_string=f"filename={filename}",
+                minzoom=meta["minzoom"],
+                maxzoom=meta["maxzoom"],
+                title=os.path.basename(filename),
+            )
         )
-    )
 
 
 if __name__ == "__main__":
