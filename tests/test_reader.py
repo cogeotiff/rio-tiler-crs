@@ -31,6 +31,11 @@ def test_reader_tiles():
     assert mask.shape == (256, 256)
 
     with COGReader(COG_PATH, tms=tms) as cog:
+        data, mask = cog.tile(x, y, z, indexes=(1, 1))
+    assert data.shape == (2, 256, 256)
+    assert mask.shape == (256, 256)
+
+    with COGReader(COG_PATH, tms=tms) as cog:
         # indexes should be ignored, TODO: add warning
         data, mask = cog.tile(x, y, z, indexes=1, expression="B1+2,B1/3")
     assert data.shape == (2, 256, 256)
@@ -64,6 +69,11 @@ def test_reader_part():
     assert mask.shape == (896, 906)
 
     with COGReader(COG_PATH) as cog:
+        data, mask = cog.part(bounds, indexes=(1, 1))
+    assert data.shape == (2, 896, 906)
+    assert mask.shape == (896, 906)
+
+    with COGReader(COG_PATH) as cog:
         data, mask = cog.part(bounds, max_size=512)
     assert data.shape == (1, 507, 512)
     assert mask.shape == (507, 512)
@@ -83,6 +93,11 @@ def test_reader_preview():
     assert mask.shape == (1024, 1021)
 
     with COGReader(COG_PATH) as cog:
+        data, mask = cog.preview(indexes=(1, 1))
+    assert data.shape == (2, 1024, 1021)
+    assert mask.shape == (1024, 1021)
+
+    with COGReader(COG_PATH) as cog:
         data, mask = cog.preview(expression="B1/2,B1+3")
     assert data.shape == (2, 1024, 1021)
     assert mask.shape == (1024, 1021)
@@ -96,6 +111,10 @@ def test_reader_point():
     with COGReader(COG_PATH) as cog:
         data = cog.point(lon, lat)
     assert len(data) == 1
+
+    with COGReader(COG_PATH) as cog:
+        data = cog.point(lon, lat, indexes=(1, 1))
+    assert len(data) == 2
 
     with COGReader(COG_PATH) as cog:
         data = cog.point(lon, lat, expression="B1/2,B1+3")

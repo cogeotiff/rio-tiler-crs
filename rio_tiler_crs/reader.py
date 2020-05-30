@@ -292,6 +292,7 @@ class COGReader:
             tilesize,
             tilesize,
             dst_crs=self.tms.crs,
+            indexes=indexes,
             **kwargs,
         )
         if expression:
@@ -327,6 +328,7 @@ class COGReader:
             max_size=max_size,
             bounds_crs=bounds_crs,
             dst_crs=dst_crs,
+            indexes=indexes,
             **kwargs,
         )
 
@@ -350,7 +352,7 @@ class COGReader:
         if expression:
             indexes = _parse_expression(expression)
 
-        data, mask = reader.preview(self.dataset, **kwargs)
+        data, mask = reader.preview(self.dataset, indexes=indexes, **kwargs)
 
         if expression:
             blocks = expression.lower().split(",")
@@ -374,7 +376,7 @@ class COGReader:
         if expression:
             indexes = _parse_expression(expression)
 
-        point = reader.point(self.dataset, (lon, lat), **kwargs)
+        point = reader.point(self.dataset, (lon, lat), indexes=indexes, **kwargs)
 
         if expression:
             blocks = expression.lower().split(",")

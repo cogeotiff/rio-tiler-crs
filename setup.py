@@ -14,7 +14,7 @@ extra_reqs = {
 
 setup(
     name="rio-tiler-crs",
-    version="2.0.0",
+    version="2.0.1",
     python_requires=">=3",
     description=u"""A rio-tiler plugin to create tile for arbitraty grid""",
     long_description=long_description,
