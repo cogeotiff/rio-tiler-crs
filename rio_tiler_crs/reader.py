@@ -108,6 +108,8 @@ class COGReader:
         Read a point value from the COG.
     stats(pmin=5, pmax=95)
         Get Raster statistics.
+    meta(pmin=5, pmax=95)
+        Get info + raster statistics
 
     """
 
@@ -400,3 +402,9 @@ class COGReader:
         return reader.stats(
             self.dataset, percentiles=(pmin, pmax), hist_options=hist_options, **kwargs,
         )
+
+    def metadata(self, pmin: float = 2.0, pmax: float = 98.0, **kwargs: Any) -> Dict:
+        """Return COG info and statistics."""
+        info = self.info.copy()
+        info["statistics"] = self.stats(pmin, pmax, **kwargs)
+        return info

@@ -154,6 +154,15 @@ def test_reader_stats():
     ]
 
 
+def test_reader_metadata():
+    """Test COGReader.info."""
+    with COGReader(COG_PATH) as cog:
+        info = cog.metadata()
+    assert info["band_metadata"]
+    assert info["band_descriptions"]
+    assert info["statistics"][1]
+
+
 def test_reader_get_zoom():
     """Test COGReader._get_zooms function with different projection."""
     with COGReader(COG_PATH) as cog:

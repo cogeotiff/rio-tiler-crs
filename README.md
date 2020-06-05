@@ -108,6 +108,8 @@ class COGReader:
         Read a point value from the COG.
     stats(pmin=5, pmax=95)
         Get Raster statistics.
+    meta(pmin=5, pmax=95)
+        Get info + raster statistics
 
     """
 ```
@@ -228,13 +230,49 @@ with COGReader("myfile.tif") as cog:
         "max": 18,
         "std": 4.069636227214257,
         "histogram": [
-            [0, 10851, 2246, 10466, 20338, 13882, 6466, 55215, 12206, 14346, 8874, 4782, 4861, 4089, 4633, 20670, 3416, 1875, 875],
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+            [...],
+            [...]
         ]
     }
 }
 ```
-Note: in the example above the histrogram is calculated for each value for the raster matching its colormap value (when it's not set to `0, 0, 0, 255`)
+
+- **COGReader.metadata()**: Return COG info + statistics
+
+```python
+with COGReader("myfile.tif") as cog:
+    print(cog.metadata())
+{
+    "bounds": [-119.05915661478785, 13.102845359730287, -84.91821332299578, 33.995073647795806],
+    "center": [-101.98868496889182, 23.548959503763047, 3],
+    "minzoom": 3,
+    "maxzoom": 12,
+    "band_metadata": [[1, {}]],
+    "band_descriptions": [[1,"band1"]],
+    "dtype": "int8",
+    "colorinterp": ["palette"],
+    "nodata_type": "Nodata",
+    "colormap": {
+        "0": [0, 0, 0, 0],
+        "1": [0, 61, 0, 255],
+        ...
+    }
+    "statistics" : {
+        1: {
+            "pc": [1, 16],
+            "min": 1,
+            "max": 18,
+            "std": 4.069636227214257,
+            "histogram": [
+                [...],
+                [...]
+            ]
+        }
+    }
+}
+   
+```
+
 
 ## Example
 
