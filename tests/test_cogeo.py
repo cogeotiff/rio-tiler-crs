@@ -8,7 +8,7 @@ from rasterio.crs import CRS
 
 from rio_tiler.errors import TileOutsideBounds
 from rio_tiler_crs import COGReader
-from rio_tiler_crs.reader import geotiff_options
+from rio_tiler_crs.cogeo import geotiff_options
 
 COG_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "cog.tif")
 COG_CMAP_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "cog_cmap.tif")
@@ -64,22 +64,22 @@ def test_reader_part():
     bounds = tms.bounds(tms.tile(lon, lat, zoom))
 
     with COGReader(COG_PATH) as cog:
-        data, mask = cog.part(bounds)
+        data, mask = cog.part(bounds, dst_crs=cog.dataset.crs)
     assert data.shape == (1, 896, 906)
     assert mask.shape == (896, 906)
 
     with COGReader(COG_PATH) as cog:
-        data, mask = cog.part(bounds, indexes=(1, 1))
+        data, mask = cog.part(bounds, indexes=(1, 1), dst_crs=cog.dataset.crs)
     assert data.shape == (2, 896, 906)
     assert mask.shape == (896, 906)
 
     with COGReader(COG_PATH) as cog:
-        data, mask = cog.part(bounds, max_size=512)
+        data, mask = cog.part(bounds, max_size=512, dst_crs=cog.dataset.crs)
     assert data.shape == (1, 507, 512)
     assert mask.shape == (507, 512)
 
     with COGReader(COG_PATH) as cog:
-        data, mask = cog.part(bounds, expression="B1/2,B1+3")
+        data, mask = cog.part(bounds, expression="B1/2,B1+3", dst_crs=cog.dataset.crs)
     assert data.shape == (2, 896, 906)
     assert mask.shape == (896, 906)
 

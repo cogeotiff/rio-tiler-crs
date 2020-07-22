@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["morecantile>=1.1.0", "rio-tiler~=2.0a10"]
+inst_reqs = ["morecantile>=1.1.0", "rio-tiler~=2.0b1"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
@@ -14,7 +14,7 @@ extra_reqs = {
 
 setup(
     name="rio-tiler-crs",
-    version="2.0.2",
+    version="3.0.0",
     python_requires=">=3",
     description=u"""A rio-tiler plugin to create tile for arbitraty grid""",
     long_description=long_description,
@@ -27,7 +27,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: GIS",
     ],
-    keywords="COG GIS",
+    keywords="STAC COG GIS",
     author=u"Vincent Sarago",
     author_email="vincent@developmentseed.org",
     url="https://github.com/cogeotiff/rio-tiler-crs",
