@@ -117,7 +117,40 @@ class COGReader:
 </details>
 
 
-- **COGReader.tile()**: Read map tile from a raster
+#### Properties
+
+- **dataset**: Return the rasterio dataset
+- **colormap**: Return the dataset's internal colormap
+- **minzoom**: Return minimum TMS Zoom
+- **maxzoom**: Return maximum TMS Zoom
+- **bounds**: Return the dataset bounds in WGS84
+- **center**: Return the center of the dataset + minzoom
+- **spatial_info**: Return the bounds, center and zoom infos
+- **info**: Return simple metadata about the dataset
+
+```python
+with COGReader("myfile.tif") as cog:
+    print(cog.info)
+{
+    "bounds": [-119.05915661478785, 13.102845359730287, -84.91821332299578, 33.995073647795806],
+    "center": [-101.98868496889182, 23.548959503763047, 3],
+    "minzoom": 3,
+    "maxzoom": 12,
+    "band_metadata": [[1, {}]],
+    "band_descriptions": [[1,"band1"]],
+    "dtype": "int8",
+    "colorinterp": ["palette"],
+    "nodata_type": "Nodata",
+    "colormap": {
+        "0": [0, 0, 0, 0],
+        "1": [0, 61, 0, 255],
+        ...
+    }
+}
+```
+
+#### Methods
+- **tile()**: Read map tile from a raster
 
 ```python
 tms = morecantile.tms.get("WorldCRS84Quad")
@@ -133,7 +166,7 @@ with COGReader("myfile.tif", tms=tms) as cog:
     tile, mask = cog.tile(1, 2, 3, tilesize=256, expression="B1/B2")
 ```
 
-- **COGReader.part()**: Read part of a raster
+- **part()**: Read part of a raster
 
 Note: `tms` has no effect on `part` read.
 
@@ -159,7 +192,7 @@ with COGReader("myfile.tif", tms=tms) as cog:
     data, mask = cog.part((10, 10, 20, 20), expression="B1/B2")
 ```
 
-- **COGReader.preview()**: Read a preview of a raster
+- **preview()**: Read a preview of a raster
 
 Note: `tms` has no effect on `part` read.
 
@@ -176,7 +209,7 @@ with COGReader("myfile.tif") as cog:
     data, mask = cog.preview(expression="B1+2,B1*4")
 ```
 
-- **COGReader.point()**: Read point value of a raster
+- **point()**: Read point value of a raster
 
 Note: `tms` has no effect on `part` read.
 
@@ -195,30 +228,9 @@ with COGReader("myfile.tif") as cog:
 [3, 4]
 ```
 
-- **COGReader.info**: Return simple metadata about the raster
+- **stats()**: Return image statistics (Min/Max/Stdev)
 
-```python
-with COGReader("myfile.tif") as cog:
-    print(cog.info)
-{
-    "bounds": [-119.05915661478785, 13.102845359730287, -84.91821332299578, 33.995073647795806],
-    "center": [-101.98868496889182, 23.548959503763047, 3],
-    "minzoom": 3,
-    "maxzoom": 12,
-    "band_metadata": [[1, {}]],
-    "band_descriptions": [[1,"band1"]],
-    "dtype": "int8",
-    "colorinterp": ["palette"],
-    "nodata_type": "Nodata",
-    "colormap": {
-        "0": [0, 0, 0, 0],
-        "1": [0, 61, 0, 255],
-        ...
-    }
-}
-```
-
-- **COGReader.stats()**: Return image statistics (Min/Max/Stdev)
+Note: `tms` has no effect on `stats`.
 
 ```python
 with COGReader("myfile.tif") as cog:
@@ -237,7 +249,7 @@ with COGReader("myfile.tif") as cog:
 }
 ```
 
-- **COGReader.metadata()**: Return COG info + statistics
+- **metadata()**: Return COG info + statistics
 
 ```python
 with COGReader("myfile.tif") as cog:
@@ -270,9 +282,229 @@ with COGReader("myfile.tif") as cog:
         }
     }
 }
-   
 ```
 
+## API - STAC
+
+Previously in its own module [stac-tiler](https://github.com/developmentseed/stac-tiler), STACReader has been moved in rio-tiler-crs.
+
+```python
+from rio_tiler_crs import STACReader
+
+with STACReader("stac.json") as stac:
+    tile, mask = stac.tile(1, 2, 3, tilesize=256, assets=["red", "green"])
+```
+
+
+<details>
+
+```python
+class STACReader:
+    """
+    STAC + Cloud Optimized GeoTIFF Reader.
+
+    Examples
+    --------
+    with STACReader(stac_path) as stac:
+        stac.tile(...)
+
+    my_stac = {
+        "type": "Feature",
+        "stac_version": "1.0.0",
+        ...
+    }
+    with STACReader(None, item=my_stac) as stac:
+        stac.tile(...)
+
+    Attributes
+    ----------
+    filepath: str
+        STAC Item path, URL or S3 URL.
+    item: Dict, optional
+        STAC Item dict.
+    tms: morecantile.TileMatrixSet, optional
+        TileMatrixSet to use, default is WebMercatorQuad.
+    minzoom: int, optional
+        Set minzoom for the tiles.
+    minzoom: int, optional
+        Set maxzoom for the tiles.
+    include_assets: Set, optional
+        Only accept some assets.
+    exclude_assets: Set, optional
+        Exclude some assets.
+    include_asset_types: Set, optional
+        Only include some assets base on their type
+    include_asset_types: Set, optional
+        Exclude some assets base on their type
+
+    Properties
+    ----------
+    bounds: tuple[float]
+        STAC bounds in WGS84 crs.
+    center: tuple[float, float, int]
+        STAC item center + minzoom
+
+    Methods
+    -------
+    tile(0, 0, 0, assets="B01", expression="B01/B02")
+        Read a map tile from the COG.
+    part((0,10,0,10), assets="B01", expression="B1/B20", max_size=1024)
+        Read part of the COG.
+    preview(assets="B01", max_size=1024)
+        Read preview of the COG.
+    point((10, 10), assets="B01")
+        Read a point value from the COG.
+    stats(assets="B01", pmin=5, pmax=95)
+        Get Raster statistics.
+    info(assets="B01")
+        Get Assets raster info.
+    metadata(assets="B01", pmin=5, pmax=95)
+        info + stats
+
+    """
+```
+
+</details>
+
+
+- **tile()**: Read map tile from STAC assets
+
+```python
+with STACReader("stac.json") as stac:
+    tile, mask = stac.tile(1, 2, 3, tilesize=256, assets=["red", "green"])
+
+# With expression
+with STACReader("stac.json") as stac:
+    tile, mask = cog.tile(1, 2, 3, tilesize=256, expression="red/green")
+```
+
+- **part()**: Read part of STAC assets
+
+```python
+with STACReader("stac.json") as stac:
+    data, mask = stac.part((10, 10, 20, 20), assets=["red", "green"])
+
+# Limit output size (default is set to 1024)
+with STACReader("stac.json") as stac:
+    data, mask = stac.part((10, 10, 20, 20), max_size=2000, assets=["red", "green"])
+
+# Read high resolution
+with STACReader("stac.json") as stac:
+    data, mask = stac.part((10, 10, 20, 20), max_size=None, assets=["red", "green"])
+
+# With expression
+with STACReader("stac.json") as stac:
+    data, mask = stac.part((10, 10, 20, 20), expression="red/green")
+```
+
+- **preview()**: Read a preview of STAC assets
+
+```python
+with STACReader("stac.json") as stac:
+    data, mask = stac.preview(assets=["red", "green"])
+
+# With expression
+with STACReader("stac.json") as stac:
+    data, mask = stac.preview(expression="red/green")
+```
+
+- **point()**: Read point value of STAC assets
+
+```python
+with STACReader("stac.json") as stac:
+    pts = stac.point(-100, 25, assets=["red", "green"])
+
+
+# With expression
+with STACReader("stac.json") as stac:
+    pts = stac.point(-100, 25, expression="red/green")
+```
+
+- **info()**: Return simple metadata for STAC assets
+
+```python
+with STACReader("stac.json") as stac:
+    info = stac.info("B01")
+{
+    "B01": {
+        "bounds": [23.10607624352815, 31.50517374437416, 24.296464503939944, 32.51933487169619],
+        "center": [23.701270373734047, 32.012254308035175, 8],
+        "minzoom": 8,
+        "maxzoom": 11,
+        "band_metadata": [[1, {}]],
+        "band_descriptions": [[1, "band1"]],
+        "dtype": "uint16",
+        "colorinterp": ["gray"],
+        "nodata_type": "Nodata"
+    }
+}
+```
+
+- **stats()**: Return statistics for STAC assets (Min/Max/Stdev)
+
+```python
+with STACReader("stac.json") as stac:
+    print(stac.stats(["B01"]))
+{
+    "B01": {
+        "1": {
+            "pc": [
+                324,
+                5046
+            ],
+            "min": 133,
+            "max": 8582,
+            "std": 1230.6977195618235,
+            "histogram": [
+                [
+                    199042, 178438, 188457, 118369, 57544, 20622, 9275, 2885, 761, 146
+                ],
+                [
+                    133, 977.9, 1822.8, 2667.7, 3512.6, 4357.5, 5202.4, 6047.3, 6892.2, 7737.099999999999, 8582
+                ]
+            ]
+        }
+    }
+}
+```
+
+- **metadata()**: Return info and statistics for STAC assets 
+
+```python
+with STACReader("stac.json") as stac:
+    print(stac.metadata(["B01"], pmin=5, pmax=95))
+{
+    "B01": {
+        "bounds": [23.10607624352815, 31.50517374437416, 24.296464503939944, 32.51933487169619],
+        "center": [23.701270373734047, 32.012254308035175, 8],
+        "minzoom": 8,
+        "maxzoom": 11,
+        "band_metadata": [[1, {}]],
+        "band_descriptions": [[1, "band1"]],
+        "dtype": "uint16",
+        "colorinterp": ["gray"],
+        "nodata_type": "Nodata"
+        "statistics": {
+            "1": {
+                "pc": [
+                    324,
+                    5046
+                ],
+                "min": 133,
+                "max": 8582,
+                "std": 1230.6977195618235,
+                "histogram": [
+                    [
+                        199042, 178438, 188457, 118369, 57544, 20622, 9275, 2885, 761, 146
+                    ],
+                    [
+                        133, 977.9, 1822.8, 2667.7, 3512.6, 4357.5, 5202.4, 6047.3, 6892.2, 7737.099999999999, 8582
+                    ]
+                ]
+            }
+        }
+    }
+```
 
 ## Example
 
