@@ -252,7 +252,7 @@ def _tile(
 ):
     """Handle /tiles requests."""
     tms = morecantile.tms.get(identifier)
-    with COGReader(f"{filename}.tif", tms=tms) as cog:
+    with COGReader(f"{filename}.tif", tms=tms) as cog:  # type: ignore
         tile, mask = cog.tile(x, y, z, tilesize=scale * 256)
 
     ext = ImageType.png
@@ -287,7 +287,7 @@ def _wmts(
     scheme = request.url.scheme
     endpoint = f"{scheme}://{host}"
 
-    with COGReader(f"{filename}.tif", tms=tms) as cog:
+    with COGReader(f"{filename}.tif", tms=tms) as cog:  # type: ignore
         meta = cog.info
 
         return XMLResponse(
