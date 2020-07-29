@@ -6,6 +6,7 @@ from typing import Any, Optional, Sequence, Tuple, Union
 import morecantile
 import numpy
 
+from rio_tiler.errors import InvalidBandName
 from rio_tiler.expression import apply_expression
 from rio_tiler.io import STACReader as RioTilerReader
 
@@ -104,7 +105,7 @@ class STACReader(RioTilerReader):
             assets = self._parse_expression(expression)
 
         if not assets:
-            raise Exception(
+            raise InvalidBandName(
                 "assets must be passed either via expression or assets options."
             )
 
