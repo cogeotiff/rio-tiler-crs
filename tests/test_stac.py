@@ -106,7 +106,7 @@ def test_reader_tiles(rio):
         with pytest.raises(InvalidBandName):
             stac.tile(*tile, assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(InvalidBandName):
             stac.tile(*tile)
 
         data, mask = stac.tile(*tile, assets="B01")

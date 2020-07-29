@@ -1,4 +1,7 @@
+3.0b2 (2020-07-28)
+------------------
+- STACReader.tile raises rio-tiler.error.InvalidBandName when no asset nor expression (#8)
+
 3.0b1 (2020-07-22)
 ------------------
-
 - Use rio-tiler 2.0b1 and its new COGReader and STACReader
