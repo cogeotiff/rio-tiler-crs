@@ -153,7 +153,7 @@ def test_reader_part(rio):
         with pytest.raises(InvalidAssetName):
             stac.part(bbox, assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.part(bbox)
 
         data, mask = stac.part(bbox, assets="B01")
@@ -198,7 +198,7 @@ def test_reader_preview(rio):
         with pytest.raises(InvalidAssetName):
             stac.preview(assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.preview()
 
         data, mask = stac.preview(assets="B01")
@@ -246,7 +246,7 @@ def test_reader_point(rio):
         with pytest.raises(InvalidAssetName):
             stac.point(lon, lat, assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.point(lon, lat)
 
         data = stac.point(lon, lat, assets="B01")
