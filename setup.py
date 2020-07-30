@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["morecantile>=1.1.0", "rio-tiler~=2.0b1", "boto3"]
+inst_reqs = ["morecantile>=1.1.0", "rio-tiler~=2.0b4", "boto3"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
@@ -14,7 +14,7 @@ extra_reqs = {
 
 setup(
     name="rio-tiler-crs",
-    version="3.0b2",
+    version="3.0b3",
     python_requires=">=3",
     description=u"""A rio-tiler plugin to create tile for arbitraty grid""",
     long_description=long_description,
