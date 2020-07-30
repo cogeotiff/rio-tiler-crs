@@ -1,4 +1,4 @@
-3.0b2 (2020-07-30)
+3.0b3 (2020-07-30)
 ------------------
 - Update rio-tiler and raise MissingAsset exception instead of InvalidBandName (#10)
 
