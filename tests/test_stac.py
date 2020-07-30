@@ -7,7 +7,7 @@ import morecantile
 import pytest
 import rasterio
 
-from rio_tiler.errors import InvalidBandName
+from rio_tiler.errors import InvalidAssetName, MissingAssets
 from rio_tiler_crs import STACReader
 
 prefix = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -103,10 +103,10 @@ def test_reader_tiles(rio):
     tile = morecantile.Tile(z=9, x=289, y=207)
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.tile(*tile, assets="B1")
 
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(MissingAssets):
             stac.tile(*tile)
 
         data, mask = stac.tile(*tile, assets="B01")
@@ -150,10 +150,10 @@ def test_reader_part(rio):
     bbox = (23.7, 31.506, 24.1, 32.514)
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.part(bbox, assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.part(bbox)
 
         data, mask = stac.part(bbox, assets="B01")
@@ -195,10 +195,10 @@ def test_reader_preview(rio):
     rio.open = mock_rasterio_open
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.preview(assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.preview()
 
         data, mask = stac.preview(assets="B01")
@@ -243,10 +243,10 @@ def test_reader_point(rio):
     lon = 23.7
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.point(lon, lat, assets="B1")
 
-        with pytest.raises(Exception):
+        with pytest.raises(MissingAssets):
             stac.point(lon, lat)
 
         data = stac.point(lon, lat, assets="B01")
@@ -279,7 +279,7 @@ def test_reader_stats(rio):
     rio.open = mock_rasterio_open
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.stats(assets="B1")
 
         data = stac.stats(assets="B01")
@@ -299,7 +299,7 @@ def test_reader_info(rio):
     rio.open = mock_rasterio_open
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.info(assets="B1")
 
         data = stac.info(assets="B01")
@@ -319,7 +319,7 @@ def test_reader_metadata(rio):
     rio.open = mock_rasterio_open
 
     with STACReader(STAC_PATH) as stac:
-        with pytest.raises(InvalidBandName):
+        with pytest.raises(InvalidAssetName):
             stac.metadata(assets="B1")
 
         data = stac.metadata(assets="B01")
