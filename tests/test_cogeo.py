@@ -178,7 +178,7 @@ def test_reader_get_zoom():
 def test_reader_info():
     """Test COGReader.info."""
     with COGReader(COG_PATH) as cog:
-        info = cog.info
+        info = cog.info()
     assert info["minzoom"] == 5
     assert info["maxzoom"] == 8
     assert info["center"][-1] == 5
@@ -193,11 +193,11 @@ def test_reader_info():
     assert not info.get("offset")
 
     with COGReader(COG_CMAP_PATH) as cog:
-        info = cog.info
+        info = cog.info()
     assert info["colormap"]
 
     with COGReader(COG_SCALE_PATH) as cog:
-        info = cog.info
+        info = cog.info()
     assert info["scale"]
     assert info["offset"]
 

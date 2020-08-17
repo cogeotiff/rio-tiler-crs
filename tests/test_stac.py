@@ -94,6 +94,12 @@ def test_fetch_stac():
     ) as stac:
         assert stac.assets == ["metadata"]
 
+    with STACReader(STAC_PATH, tms=morecantile.tms.get("WorldCRS84Quad")) as stac:
+        assert stac.minzoom == 0
+        assert stac.maxzoom == 17
+        tms = stac.reader_options.get("tms")
+        assert tms.identifier == "WorldCRS84Quad"
+
 
 @patch("rio_tiler.io.cogeo.rasterio")
 def test_reader_tiles(rio):
