@@ -93,8 +93,6 @@ class COGReader:
         COG center + minzoom
     colormap: dict
         COG internal colormap.
-    info: dict
-        General information about the COG (datatype, indexes, ...)
 
     Methods
     -------
@@ -106,6 +104,8 @@ class COGReader:
         Read preview of the COG.
     point((10, 10), indexes=1)
         Read a point value from the COG.
+    info()
+        General information about the COG (datatype, indexes, ...)
     stats(pmin=5, pmax=95)
         Get Raster statistics.
     meta(pmin=5, pmax=95)
@@ -126,28 +126,6 @@ class COGReader:
 - **bounds**: Return the dataset bounds in WGS84
 - **center**: Return the center of the dataset + minzoom
 - **spatial_info**: Return the bounds, center and zoom infos
-- **info**: Return simple metadata about the dataset
-
-```python
-with COGReader("myfile.tif") as cog:
-    print(cog.info)
-{
-    "bounds": [-119.05915661478785, 13.102845359730287, -84.91821332299578, 33.995073647795806],
-    "center": [-101.98868496889182, 23.548959503763047, 3],
-    "minzoom": 3,
-    "maxzoom": 12,
-    "band_metadata": [[1, {}]],
-    "band_descriptions": [[1,"band1"]],
-    "dtype": "int8",
-    "colorinterp": ["palette"],
-    "nodata_type": "Nodata",
-    "colormap": {
-        "0": [0, 0, 0, 0],
-        "1": [0, 61, 0, 255],
-        ...
-    }
-}
-```
 
 #### Methods
 - **tile()**: Read map tile from a raster
@@ -226,6 +204,29 @@ with COGReader("myfile.tif") as cog:
 with COGReader("myfile.tif") as cog: 
     print(cog.point(-100, 25, expression="B1+2,B1*4"))
 [3, 4]
+```
+
+- **info**: Return simple metadata about the dataset
+
+```python
+with COGReader("myfile.tif") as cog:
+    print(cog.info())
+{
+    "bounds": [-119.05915661478785, 13.102845359730287, -84.91821332299578, 33.995073647795806],
+    "center": [-101.98868496889182, 23.548959503763047, 3],
+    "minzoom": 3,
+    "maxzoom": 12,
+    "band_metadata": [[1, {}]],
+    "band_descriptions": [[1,"band1"]],
+    "dtype": "int8",
+    "colorinterp": ["palette"],
+    "nodata_type": "Nodata",
+    "colormap": {
+        "0": [0, 0, 0, 0],
+        "1": [0, 61, 0, 255],
+        ...
+    }
+}
 ```
 
 - **stats()**: Return image statistics (Min/Max/Stdev)

@@ -1,9 +1,9 @@
 """rio-tiler-crs.cogeo."""
 
 from concurrent import futures
-from dataclasses import dataclass
 from typing import Any, Dict, Optional, Sequence, Tuple
 
+import attr
 import morecantile
 import numpy
 from rasterio.transform import from_bounds
@@ -30,7 +30,7 @@ def geotiff_options(
     return dict(crs=tms.crs, transform=dst_transform)
 
 
-@dataclass
+@attr.s
 class COGReader(RioTilerReader):
     """
     Cloud Optimized GeoTIFF Reader.
@@ -90,7 +90,7 @@ class COGReader(RioTilerReader):
 
     """
 
-    tms: morecantile.TileMatrixSet = default_tms
+    tms: morecantile.TileMatrixSet = attr.ib(default=default_tms)
 
     def _get_zooms(self):
         """Calculate raster min/max zoom level."""
@@ -120,8 +120,8 @@ class COGReader(RioTilerReader):
         )
         min_zoom = _zoom_for_pixelsize(ovr_resolution)
 
-        self._minzoom = self._minzoom or min_zoom
-        self._maxzoom = self._maxzoom or max_zoom
+        self.minzoom = self.minzoom or min_zoom
+        self.maxzoom = self.maxzoom or max_zoom
 
         return
 

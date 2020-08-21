@@ -1,22 +1,20 @@
 """rio-tiler-crs.stac."""
 
-from dataclasses import dataclass
-from typing import Any, Optional, Sequence, Tuple, Union
+from typing import Type
 
+import attr
 import morecantile
-import numpy
 
-from rio_tiler.errors import MissingAssets
-from rio_tiler.expression import apply_expression
-from rio_tiler.io import STACReader as RioTilerReader
+from rio_tiler.io import BaseReader
+from rio_tiler.io import STACReader as RioTilerSTACReader
 
-from .cogeo import multi_tile
+from .cogeo import COGReader
 
-TMS = morecantile.tms.get("WebMercatorQuad")
+default_tms = morecantile.tms.get("WebMercatorQuad")
 
 
-@dataclass
-class STACReader(RioTilerReader):
+@attr.s
+class STACReader(RioTilerSTACReader):
     """
     STAC + Cloud Optimized GeoTIFF Reader.
 
@@ -80,48 +78,17 @@ class STACReader(RioTilerReader):
 
     """
 
-    tms: morecantile.TileMatrixSet = TMS
-    maxzoom: int = TMS.maxzoom
-    minzoom: int = TMS.minzoom
+    reader: Type[BaseReader] = attr.ib(default=COGReader)
+    tms: morecantile.TileMatrixSet = attr.ib(default=default_tms)
+    minzoom: int = attr.ib(default=None)
+    maxzoom: int = attr.ib(default=None)
 
-    def tile(
-        self,
-        tile_x: int,
-        tile_y: int,
-        tile_z: int,
-        tilesize: int = 256,
-        assets: Union[Sequence[str], str] = None,
-        expression: Optional[str] = "",  # Expression based on asset names
-        asset_expression: Optional[
-            str
-        ] = "",  # Expression for each asset based on index names
-        **kwargs: Any,
-    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
-        """Read a TMS map tile from COGs."""
-        if isinstance(assets, str):
-            assets = (assets,)
+    def __attrs_post_init__(self):
+        """forward tms to readers options and set min/max zoom."""
+        self.reader_options.update({"tms": self.tms})
 
-        if expression:
-            assets = self._parse_expression(expression)
+        if self.minzoom is None:
+            self.minzoom = self.tms.minzoom
 
-        if not assets:
-            raise MissingAssets(
-                "assets must be passed either via expression or assets options."
-            )
-
-        asset_urls = self._get_href(assets)
-        data, mask = multi_tile(
-            asset_urls,
-            tile_x,
-            tile_y,
-            tile_z,
-            expression=asset_expression,
-            tms=self.tms,
-            **kwargs,
-        )
-
-        if expression:
-            blocks = expression.split(",")
-            data = apply_expression(blocks, assets, data)
-
-        return data, mask
+        if self.maxzoom is None:
+            self.maxzoom = self.tms.maxzoom
