@@ -146,6 +146,8 @@ class COGReader(RioTilerReader):
         **kwargs: Any,
     ) -> Tuple[numpy.ndarray, numpy.ndarray]:
         """Read a TMS map tile from a COG."""
+        kwargs = {**self._kwargs, **kwargs}
+
         if isinstance(indexes, int):
             indexes = (indexes,)
 

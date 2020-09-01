@@ -1,14 +1,29 @@
 # rio-tiler-crs
 
-A rio-tiler plugin to create tiles in different projection
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/10407788/73080923-9d198a00-3e94-11ea-9644-ce39ffb3882a.jpg" style="max-width: 800px;" alt="rio-tiler"></a>
+</p>
+<p align="center">
+  <em>A rio-tiler plugin to create tiles in different projection</em>
+</p>
 
-
-[![Packaging status](https://badge.fury.io/py/rio-tiler-crs.svg)](https://badge.fury.io/py/rio-tiler-crs)
-[![CircleCI](https://circleci.com/gh/cogeotiff/rio-tiler-crs.svg?style=svg)](https://circleci.com/gh/cogeotiff/rio-tiler-crs)
-[![codecov](https://codecov.io/gh/cogeotiff/rio-tiler-crs/branch/master/graph/badge.svg)](https://codecov.io/gh/cogeotiff/rio-tiler-crs)
-
-![](https://user-images.githubusercontent.com/10407788/73080923-9d198a00-3e94-11ea-9644-ce39ffb3882a.jpg)
-
+<p align="center">
+  <a href="https://github.com/cogeotiff/rio-tiler-crs/actions?query=workflow%3ACI" target="_blank">
+      <img src="https://github.com/cogeotiff/rio-tiler-crs/workflows/CI/badge.svg" alt="Test">
+  </a>
+  <a href="https://codecov.io/gh/cogeotiff/rio-tiler-crs" target="_blank">
+      <img src="https://codecov.io/gh/cogeotiff/rio-tiler-crs/branch/master/graph/badge.svg" alt="Coverage">
+  </a>
+  <a href="https://pypi.org/project/rio-tiler-crs" target="_blank">
+      <img src="https://img.shields.io/pypi/v/rio-tiler-crs?color=%2334D058&label=pypi%20package" alt="Package version">
+  </a>
+  <a href="https://pypistats.org/packages/rio-tiler-crs" target="_blank">
+      <img src="https://img.shields.io/pypi/dm/rio-tiler-crs.svg" alt="Downloads">
+  </a>
+  <a href="https://github.com/cogeotiff/rio-tiler-crs/blob/master/LICENSE.txt" target="_blank">
+      <img src="https://img.shields.io/github/license/cogeotiff/rio-tiler-crs.svg" alt="Downloads">
+  </a>
+</p>
 
 ## Install
 
