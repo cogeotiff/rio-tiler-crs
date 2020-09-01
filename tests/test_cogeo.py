@@ -210,3 +210,27 @@ def test_GTiffOptions():
     tms = morecantile.tms.get("WorldCRS84Quad")
     info = geotiff_options(1, 1, 1, tms=tms)
     assert info["crs"] == CRS.from_epsg(4326)
+
+
+def test_COGReader_Options():
+    """Set options in reader."""
+    with COGReader(COG_PATH, nodata=1) as cog:
+        meta = cog.metadata()
+        assert meta["statistics"][1]["pc"] == [2720, 6896]
+
+    with COGReader(COG_PATH, nodata=1) as cog:
+        _, mask = cog.tile(43, 25, 7)
+        assert not mask.all()
+
+    with COGReader(COG_SCALE_PATH, unscale=True) as cog:
+        p = cog.point(310000, 4100000, coord_crs=cog.dataset.crs)
+        assert round(p[0], 3) == 1000.892
+
+        # passing unscale in method should overwrite the defaults
+        p = cog.point(310000, 4100000, coord_crs=cog.dataset.crs, unscale=False)
+        assert p[0] == 8917
+
+    cutline = "POLYGON ((13 1685, 1010 6, 2650 967, 1630 2655, 13 1685))"
+    with COGReader(COG_PATH, vrt_options={"cutline": cutline}) as cog:
+        _, mask = cog.preview()
+        assert not mask.all()
