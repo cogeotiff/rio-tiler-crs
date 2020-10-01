@@ -92,3 +92,5 @@ class STACReader(RioTilerSTACReader):
 
         if self.maxzoom is None:
             self.maxzoom = self.tms.maxzoom
+
+        super().__attrs_post_init__()

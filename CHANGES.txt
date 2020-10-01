@@ -1,6 +1,10 @@
+3.0b6 (2020-10-01)
+------------------
+- Adapt for rio-tiler==2.0b13
+
 3.0b5 (2020-09-01)
 ------------------
-- Forward reader_options in kwargs for COGReader.tile (#13) 
+- Forward reader_options in kwargs for COGReader.tile (#13)
 
 3.0b4 (2020-08-21)
 ------------------
