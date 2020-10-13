@@ -1,5 +1,8 @@
 # rio-tiler-crs
 
+⚠️ **The features provided by this plugin have been integrated in rio-tiler >=2.0.0b17**
+
+
 <p align="center">
   <img src="https://user-images.githubusercontent.com/10407788/73080923-9d198a00-3e94-11ea-9644-ce39ffb3882a.jpg" style="max-width: 800px;" alt="rio-tiler"></a>
 </p>
@@ -77,7 +80,7 @@ class COGReader:
     --------
     with CogeoReader(src_path) as cog:
         cog.tile(...)
-    
+
     with rasterio.open(src_path) as src_dst:
         with WarpedVRT(src_dst, ...) as vrt_dst:
             with CogeoReader(None, dataset=vrt_dst) as cog:
@@ -190,15 +193,15 @@ with COGReader("myfile.tif", tms=tms) as cog:
 Note: `tms` has no effect on `part` read.
 
 ```python
-with COGReader("myfile.tif") as cog: 
+with COGReader("myfile.tif") as cog:
     data, mask = cog.preview()
 
 # With indexes
-with COGReader("myfile.tif") as cog: 
+with COGReader("myfile.tif") as cog:
     data, mask = cog.preview(indexes=1)
 
 # With expression
-with COGReader("myfile.tif") as cog: 
+with COGReader("myfile.tif") as cog:
     data, mask = cog.preview(expression="B1+2,B1*4")
 ```
 
@@ -207,16 +210,16 @@ with COGReader("myfile.tif") as cog:
 Note: `tms` has no effect on `part` read.
 
 ```python
-with COGReader("myfile.tif") as cog: 
+with COGReader("myfile.tif") as cog:
     print(cog.point(-100, 25))
 
 # With indexes
-with COGReader("myfile.tif") as cog: 
-    print(cog.point(-100, 25, indexes=1)) 
+with COGReader("myfile.tif") as cog:
+    print(cog.point(-100, 25, indexes=1))
 [1]
 
 # With expression
-with COGReader("myfile.tif") as cog: 
+with COGReader("myfile.tif") as cog:
     print(cog.point(-100, 25, expression="B1+2,B1*4"))
 [3, 4]
 ```
@@ -484,7 +487,7 @@ with STACReader("stac.json") as stac:
 }
 ```
 
-- **metadata()**: Return info and statistics for STAC assets 
+- **metadata()**: Return info and statistics for STAC assets
 
 ```python
 with STACReader("stac.json") as stac:
